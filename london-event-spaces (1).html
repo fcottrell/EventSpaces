@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soho & Covent Garden — Private Event Spaces</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --ink:     #1a1614;
+    --parch:   #f5f0e8;
+    --cream:   #ede7d9;
+    --gold:    #b8924a;
+    --rust:    #8b3a2a;
+    --mist:    #6b6460;
+    --card-bg: #faf7f2;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 500;
+    background: var(--ink);
+    padding: 14px 28px;
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    border-bottom: 1px solid #333;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: var(--parch);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  header .subtitle {
+    font-size: 0.72rem;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  header .count {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: var(--mist);
+    letter-spacing: 0.06em;
+  }
+
+  .layout {
+    display: flex;
+    height: 100vh;
+    padding-top: 51px;
+  }
+
+  #map {
+    flex: 1 1 0;
+    min-width: 0;
+    z-index: 1;
+  }
+
+  /* Leaflet overrides */
+  .leaflet-control-attribution {
+    background: rgba(245,240,232,0.88) !important;
+    color: #6b6460 !important;
+    font-size: 10px !important;
+  }
+  .leaflet-control-attribution a { color: var(--rust) !important; }
+  .leaflet-control-zoom a {
+    background: #fff !important;
+    color: var(--ink) !important;
+    border-color: #d8d0c4 !important;
+    font-weight: 500;
+  }
+  .leaflet-control-zoom a:hover { background: var(--cream) !important; }
+
+  /* Custom pin */
+  .pin-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.22));
+    transition: transform 0.15s;
+  }
+  .pin-wrap:hover { transform: translateY(-2px); }
+
+  .pin-label {
+    background: var(--ink);
+    color: var(--parch);
+    border: 1.5px solid var(--ink);
+    border-radius: 3px;
+    padding: 3px 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    line-height: 1.3;
+  }
+  .pin-dot {
+    width: 6px; height: 6px;
+    background: var(--ink);
+    border-radius: 50%;
+    margin-top: 3px;
+  }
+  .pin-wrap.active .pin-label {
+    background: var(--gold);
+    color: var(--ink);
+    border-color: var(--gold);
+  }
+  .pin-wrap.active .pin-dot {
+    background: var(--gold);
+    box-shadow: 0 0 0 3px rgba(184,146,74,0.25);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 380px;
+    flex-shrink: 0;
+    background: var(--parch);
+    overflow-y: auto;
+    border-left: 1px solid #ddd5c8;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* DETAIL PANEL */
+  .detail-panel {
+    display: none;
+    flex-direction: column;
+    background: var(--card-bg);
+    border-top: 3px solid var(--gold);
+    flex-shrink: 0;
+  }
+  .detail-panel.open { display: flex; }
+
+  .detail-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 190px;
+    background: var(--cream);
+    overflow: hidden;
+  }
+  .detail-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .detail-img-placeholder {
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 0.95rem;
+    background: linear-gradient(140deg, #e8e0d0 0%, #d4c9b8 100%);
+    padding: 20px;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 8px; right: 10px;
+    background: rgba(255,255,255,0.8);
+    border: none;
+    cursor: pointer;
+    color: var(--ink);
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 3px;
+    z-index: 2;
+  }
+  .close-btn:hover { background: #fff; }
+
+  .detail-body { padding: 16px 20px 18px; }
+
+  .detail-eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .detail-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 5px;
+  }
+  .detail-stars {
+    color: var(--gold);
+    font-size: 0.73rem;
+    margin-bottom: 10px;
+  }
+  .detail-desc {
+    font-size: 0.81rem;
+    line-height: 1.65;
+    color: #3a3330;
+    margin-bottom: 12px;
+  }
+  .detail-meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    font-size: 0.73rem;
+    margin-bottom: 12px;
+  }
+  .detail-meta .lbl { color: var(--mist); white-space: nowrap; }
+  .detail-meta .val { color: var(--ink); }
+
+  .detail-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    color: var(--rust);
+    text-decoration: none;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .detail-link:hover { border-bottom-color: var(--rust); }
+
+  /* VENUE LIST */
+  .venue-list { list-style: none; }
+
+  .venue-item {
+    border-bottom: 1px solid #e0d8cc;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .venue-item:hover { background: var(--cream); }
+  .venue-item.active { background: var(--ink); }
+
+  .venue-item-inner {
+    padding: 12px 20px;
+    display: flex;
+    gap: 11px;
+    align-items: flex-start;
+  }
+
+  .venue-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    color: var(--gold);
+    font-style: italic;
+    flex-shrink: 0;
+    min-width: 18px;
+    padding-top: 1px;
+  }
+
+  .venue-meta { flex: 1; min-width: 0; }
+
+  .venue-name {
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.25;
+    margin-bottom: 2px;
+  }
+  .venue-item.active .venue-name { color: var(--parch); }
+
+  .venue-tag {
+    font-size: 0.67rem;
+    color: var(--mist);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .venue-item.active .venue-tag { color: #9c9590; }
+
+  .venue-cap {
+    font-size: 0.7rem;
+    color: var(--mist);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .venue-item.active .venue-cap { color: #9c9590; }
+
+  @media (max-width: 700px) {
+    .layout { flex-direction: column; }
+    #map { flex: 0 0 45vh; }
+    .sidebar { width: 100%; border-left: none; border-top: 1px solid #ddd5c8; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Private Event Spaces</h1>
+  <span class="subtitle">Soho &amp; Covent Garden</span>
+  <span class="count">10 venues</span>
+</header>
+
+<div class="layout">
+  <div id="map"></div>
+
+  <aside class="sidebar">
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-img-wrap">
+        <img class="detail-img" id="detail-img" src="" alt="" style="display:none;">
+        <div class="detail-img-placeholder" id="detail-placeholder"></div>
+        <button class="close-btn" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-eyebrow" id="detail-area"></div>
+        <div class="detail-name" id="detail-name"></div>
+        <div class="detail-stars" id="detail-stars"></div>
+        <p class="detail-desc" id="detail-desc"></p>
+        <div class="detail-meta">
+          <span class="lbl">Capacity</span><span class="val" id="detail-cap"></span>
+          <span class="lbl">Address</span><span class="val" id="detail-addr"></span>
+        </div>
+        <a class="detail-link" id="detail-link" href="#" target="_blank" rel="noopener">Visit website ↗</a>
+      </div>
+    </div>
+
+    <ul class="venue-list" id="venue-list"></ul>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const VENUES = [
+  {
+    num: 1,
+    name: "The Social — Upstairs Bar",
+    area: "Fitzrovia",
+    capacity: "60–100",
+    lat: 51.5173509, lng: -0.1407312,
+    rating: 4.4, ratingCount: 774,
+    address: "5 Little Portland St, W1W 7JD",
+    url: "https://www.thesocial.com",
+    desc: "A genuine Soho/Fitzrovia music institution with 25+ years of history. The upstairs bar holds up to 100 and is well-suited to networking events, corporate mixers and private showcases — with real character that no blank-canvas room can replicate.",
+    tag: "Music bar / private hire",
+    photo: "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=760&q=80"
+  },
+  {
+    num: 2,
+    name: "Beasy Soho — Whole Venue",
+    area: "Greek Street, Soho",
+    capacity: "60–100",
+    lat: 51.5145168, lng: -0.1313401,
+    rating: 4.8, ratingCount: 892,
+    address: "58 Greek St, W1D 3DY",
+    url: "https://beasybar.co.uk",
+    desc: "A hidden Soho bar with solid event bones: cocktail-led drinks, elevated street food, a DJ booth and dancefloor, all within a full-venue capacity of around 100. Less theatrical than some speakeasy concepts — more warm and sociable.",
+    tag: "Cocktail bar / buyout",
+    photo: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=760&q=80"
+  },
+  {
+    num: 3,
+    name: "Disrepute",
+    area: "Kingly Court, Carnaby",
+    capacity: "60–100",
+    lat: 51.5122358, lng: -0.1383323,
+    rating: 4.4, ratingCount: 1196,
+    address: "4 Kingly Ct, W1F 9RR",
+    url: "https://www.disrepute.co.uk",
+    desc: "A 100-capacity basement under Kingly Court — low-lit booths, strong cocktails and a slightly scandalous Soho edge. Has hosted spirits brand launches and is available for private events. More polished than gritty, but with genuine character.",
+    tag: "Speakeasy basement",
+    photo: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=760&q=80"
+  },
+  {
+    num: 4,
+    name: "Jack Solomons Club",
+    area: "Great Windmill St, Soho",
+    capacity: "50–100+",
+    lat: 51.5111721, lng: -0.1342534,
+    rating: 4.3, ratingCount: 311,
+    address: "41 Great Windmill St, W1D 7NB",
+    url: "https://jacksolomons.com/private-hire/",
+    desc: "Moody, grown-up and subterranean. The Red Room fits 20–60; The Club handles 100+. Named after the legendary boxing impresario, it offers canapés, bowl food and bespoke cocktails — late-night Soho without the chaos.",
+    tag: "Club / event space",
+    photo: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=760&q=80"
+  },
+  {
+    num: 5,
+    name: "QT at Middle Eight",
+    area: "Covent Garden / Holborn",
+    capacity: "80–110",
+    lat: 51.5158996, lng: -0.1201003,
+    rating: 4.5, ratingCount: 1829,
+    address: "66 Great Queen St, WC2B 5BX",
+    url: "https://middleeight.com/events/",
+    desc: "The most fully event-capable option on this list without feeling like a blank canvas. A private basement with its own entrance, stage, pro sound system and cinema screen — purpose-built for live music, product launches and branded evenings.",
+    tag: "Hotel event space",
+    photo: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=760&q=80"
+  },
+  {
+    num: 6,
+    name: "Below Stone Nest",
+    area: "Shaftesbury Avenue / Soho",
+    capacity: "60–90 (enquire)",
+    lat: 51.5129552, lng: -0.1293207,
+    rating: 4.3, ratingCount: 202,
+    address: "136 Shaftesbury Ave, W1D 5EZ",
+    url: "https://www.stonenest.org/below-stone-nest",
+    desc: "A raw, candlelit basement beneath a former Victorian chapel — more art-bar than corporate venue. Available for exclusive hire from 6pm, with highball-led drinks and food. Capacity not published; direct enquiry needed. High on atmosphere.",
+    tag: "Art bar / exclusive hire",
+    photo: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=760&q=80"
+  },
+  {
+    num: 7,
+    name: "The Little Violet Door",
+    area: "Kingly Street, Carnaby",
+    capacity: "50–100",
+    lat: 51.5124357, lng: -0.1389853,
+    rating: 4.8, ratingCount: 1964,
+    address: "9 Kingly St, W1B 5PH",
+    url: "https://www.thelittlevioletdoor.co.uk",
+    desc: "Styled as an after-hours house party across multiple basement levels, which solves the 'room feels empty' problem elegantly. Games room (50), Living Room & Kitchen (80), or full basement (130). Playful rather than gritty, but uniquely unforgettable.",
+    tag: "House party venue",
+    photo: "https://images.unsplash.com/photo-1575444758702-4a6b9222336e?w=760&q=80"
+  },
+  {
+    num: 8,
+    name: "Covent Garden Social Club",
+    area: "Covent Garden",
+    capacity: "50–80",
+    lat: 51.5119944, lng: -0.1276139,
+    rating: 4.4, ratingCount: 728,
+    address: "6-7 Great Newport St, WC2H 7JA",
+    url: "https://coventgardensocialclub.co.uk/private-hire/",
+    desc: "A compact basement with a red-leather cocktail-club feel and live piano. Up to 80 guests — intimate enough that 50 feels like a crowd rather than a gap. Well-suited to a launch that tips into party.",
+    tag: "Cocktail club basement",
+    photo: "https://images.unsplash.com/photo-1585518419759-7fe2e0fbf8a6?w=760&q=80"
+  },
+  {
+    num: 9,
+    name: "LOCKES — Downstairs Bar",
+    area: "Covent Garden",
+    capacity: "~60 standing",
+    lat: 51.5153099, lng: -0.1215322,
+    rating: 4.8, ratingCount: 850,
+    address: "32 Great Queen St, WC2B 5AA",
+    url: "https://lockes.co.uk",
+    desc: "A private basement with its own bar, lounge seating and PA system, for up to 60 standing. Less edgy than the Soho options, but warm, accessible and practical — a strong choice if the product should feel inviting rather than underground.",
+    tag: "Private basement bar",
+    photo: "https://images.unsplash.com/photo-1536935338788-846bb9981813?w=760&q=80"
+  },
+  {
+    num: 10,
+    name: "The Lower Third",
+    area: "Denmark Street, Soho",
+    capacity: "40–50",
+    lat: 51.5154881, lng: -0.1291489,
+    rating: 4.3, ratingCount: 397,
+    address: "26 Denmark St, WC2H 8NJ",
+    url: "https://www.outernet.com/b2b/spaces/the-lower-third",
+    desc: "Denmark Street — London's Tin Pan Alley — lends this basement real music heritage. The Forge and Cocktail Bar both cap around 40–50 guests. Keep for a tight 50; it punches above its weight on authentic music DNA.",
+    tag: "Music venue / cocktail bar",
+    photo: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=760&q=80"
+  }
+];
+
+// MAP — light CartoDB Positron tiles
+const map = L.map('map', {
+  center: [51.5138, -0.1317],
+  zoom: 15,
+  zoomControl: true
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+let activeIdx = null;
+
+function makeIconHTML(v) {
+  return `<div class="pin-wrap" data-idx="${v.num - 1}">
+    <div class="pin-label">${v.name.split(' — ')[0]}</div>
+    <div class="pin-dot"></div>
+  </div>`;
+}
+
+// Add markers
+VENUES.forEach((v, i) => {
+  const icon = L.divIcon({
+    html: makeIconHTML(v),
+    className: '',
+    iconAnchor: [0, 32],
+    iconSize: null
+  });
+  const marker = L.marker([v.lat, v.lng], { icon }).addTo(map);
+  marker.on('click', () => openDetail(i));
+});
+
+// Re-attach click handlers after Leaflet renders pins
+map.on('layeradd', rebindPins);
+setTimeout(rebindPins, 400);
+
+function rebindPins() {
+  document.querySelectorAll('.pin-wrap').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.idx, 10);
+      if (!isNaN(idx)) openDetail(idx);
+    });
+  });
+}
+
+function refreshPinStates() {
+  document.querySelectorAll('.pin-wrap').forEach(el => {
+    const idx = parseInt(el.dataset.idx, 10);
+    el.classList.toggle('active', idx === activeIdx);
+  });
+}
+
+function openDetail(idx) {
+  const v = VENUES[idx];
+  activeIdx = idx;
+
+  document.querySelectorAll('.venue-item').forEach((el, i) =>
+    el.classList.toggle('active', i === idx));
+  refreshPinStates();
+
+  map.panTo([v.lat, v.lng]);
+
+  document.getElementById('detail-area').textContent = v.area;
+  document.getElementById('detail-name').textContent = v.name;
+  document.getElementById('detail-stars').textContent = '★ ' + v.rating + ' (' + v.ratingCount.toLocaleString() + ' reviews)';
+  document.getElementById('detail-desc').textContent = v.desc;
+  document.getElementById('detail-cap').textContent = v.capacity;
+  document.getElementById('detail-addr').textContent = v.address;
+  document.getElementById('detail-link').href = v.url;
+
+  const img = document.getElementById('detail-img');
+  const ph  = document.getElementById('detail-placeholder');
+  if (v.photo) {
+    img.onload = () => { img.style.display = 'block'; ph.style.display = 'none'; };
+    img.onerror = () => { img.style.display = 'none'; ph.style.display = 'flex'; ph.textContent = v.name; };
+    img.src = v.photo;
+  } else {
+    img.style.display = 'none';
+    ph.style.display = 'flex';
+    ph.textContent = v.name;
+  }
+
+  document.getElementById('detail-panel').classList.add('open');
+  document.querySelectorAll('.venue-item')[idx]
+    .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeDetail() {
+  activeIdx = null;
+  document.getElementById('detail-panel').classList.remove('open');
+  document.querySelectorAll('.venue-item').forEach(el => el.classList.remove('active'));
+  refreshPinStates();
+}
+
+// Build sidebar list
+const list = document.getElementById('venue-list');
+VENUES.forEach((v, i) => {
+  const li = document.createElement('li');
+  li.className = 'venue-item';
+  li.innerHTML = `<div class="venue-item-inner">
+    <span class="venue-num">${v.num}</span>
+    <div class="venue-meta">
+      <div class="venue-name">${v.name}</div>
+      <div class="venue-tag">${v.tag}</div>
+    </div>
+    <div class="venue-cap">${v.capacity}</div>
+  </div>`;
+  li.addEventListener('click', () => openDetail(i));
+  list.appendChild(li);
+});
+</script>
+</body>
+</html>
