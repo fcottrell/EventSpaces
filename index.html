@@ -535,7 +535,7 @@ setTimeout(rebindPins, 400);
 function rebindPins() {
   document.querySelectorAll('.pin-wrap').forEach(el => {
     el.addEventListener('click', () => {
-      const idx = parseInt(el.dataset.idx, 10);
+      const idx = parseInt(el.dataset.idx, 11);
       if (!isNaN(idx)) openDetail(idx);
     });
   });
@@ -543,7 +543,7 @@ function rebindPins() {
 
 function refreshPinStates() {
   document.querySelectorAll('.pin-wrap').forEach(el => {
-    const idx = parseInt(el.dataset.idx, 10);
+    const idx = parseInt(el.dataset.idx, 11);
     el.classList.toggle('active', idx === activeIdx);
   });
 }
