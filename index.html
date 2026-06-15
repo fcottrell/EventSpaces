@@ -246,6 +246,13 @@
   }
   .detail-link:hover { border-bottom-color: var(--rust); }
 
+  .detail-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
   /* VENUE LIST */
   .venue-list { list-style: none; }
 
@@ -336,7 +343,10 @@
           <span class="lbl">Capacity</span><span class="val" id="detail-cap"></span>
           <span class="lbl">Address</span><span class="val" id="detail-addr"></span>
         </div>
-        <a class="detail-link" id="detail-link" href="#" target="_blank" rel="noopener">Visit website ↗</a>
+        <div class="detail-actions">
+          <a class="detail-link" id="detail-link" href="#" target="_blank" rel="noopener">Visit website ↗</a>
+          <a class="detail-link" id="detail-pdf" href="#" target="_blank" rel="noopener" style="display:none;">View PDF ↗</a>
+        </div>
       </div>
     </div>
 
@@ -356,6 +366,7 @@ const VENUES = [
     rating: 4.4, ratingCount: 774,
     address: "5 Little Portland St, W1W 7JD",
     url: "https://www.thesocial.com",
+    pdf: "",
     desc: "A genuine Soho/Fitzrovia music institution with 25+ years of history. The upstairs bar holds up to 100 and is well-suited to networking events, corporate mixers and private showcases — with real character that no blank-canvas room can replicate.",
     tag: "Music bar / private hire",
     photo: "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=760&q=80"
@@ -369,6 +380,7 @@ const VENUES = [
     rating: 4.8, ratingCount: 892,
     address: "58 Greek St, W1D 3DY",
     url: "https://beasybar.co.uk",
+    pdf: "",
     desc: "A hidden Soho bar with solid event bones: cocktail-led drinks, elevated street food, a DJ booth and dancefloor, all within a full-venue capacity of around 100. Less theatrical than some speakeasy concepts — more warm and sociable.",
     tag: "Cocktail bar / buyout",
     photo: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=760&q=80"
@@ -382,6 +394,7 @@ const VENUES = [
     rating: 4.4, ratingCount: 1196,
     address: "4 Kingly Ct, W1F 9RR",
     url: "https://www.disrepute.co.uk",
+    pdf: "",
     desc: "A 100-capacity basement under Kingly Court — low-lit booths, strong cocktails and a slightly scandalous Soho edge. Has hosted spirits brand launches and is available for private events. More polished than gritty, but with genuine character.",
     tag: "Speakeasy basement",
     photo: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=760&q=80"
@@ -395,6 +408,7 @@ const VENUES = [
     rating: 4.3, ratingCount: 311,
     address: "41 Great Windmill St, W1D 7NB",
     url: "https://jacksolomons.com/private-hire/",
+    pdf: "",
     desc: "Moody, grown-up and subterranean. The Red Room fits 20–60; The Club handles 100+. Named after the legendary boxing impresario, it offers canapés, bowl food and bespoke cocktails — late-night Soho without the chaos.",
     tag: "Club / event space",
     photo: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=760&q=80"
@@ -408,6 +422,7 @@ const VENUES = [
     rating: 4.5, ratingCount: 1829,
     address: "66 Great Queen St, WC2B 5BX",
     url: "https://middleeight.com/events/",
+    pdf: "",
     desc: "The most fully event-capable option on this list without feeling like a blank canvas. A private basement with its own entrance, stage, pro sound system and cinema screen — purpose-built for live music, product launches and branded evenings.",
     tag: "Hotel event space",
     photo: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=760&q=80"
@@ -421,6 +436,7 @@ const VENUES = [
     rating: 4.3, ratingCount: 202,
     address: "136 Shaftesbury Ave, W1D 5EZ",
     url: "https://www.stonenest.org/below-stone-nest",
+    pdf: "",
     desc: "A raw, candlelit basement beneath a former Victorian chapel — more art-bar than corporate venue. Available for exclusive hire from 6pm, with highball-led drinks and food. Capacity not published; direct enquiry needed. High on atmosphere.",
     tag: "Art bar / exclusive hire",
     photo: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=760&q=80"
@@ -434,6 +450,7 @@ const VENUES = [
     rating: 4.8, ratingCount: 1964,
     address: "9 Kingly St, W1B 5PH",
     url: "https://www.thelittlevioletdoor.co.uk",
+    pdf: "",
     desc: "Styled as an after-hours house party across multiple basement levels, which solves the 'room feels empty' problem elegantly. Games room (50), Living Room & Kitchen (80), or full basement (130). Playful rather than gritty, but uniquely unforgettable.",
     tag: "House party venue",
     photo: "https://images.unsplash.com/photo-1575444758702-4a6b9222336e?w=760&q=80"
@@ -447,6 +464,7 @@ const VENUES = [
     rating: 4.4, ratingCount: 728,
     address: "6-7 Great Newport St, WC2H 7JA",
     url: "https://coventgardensocialclub.co.uk/private-hire/",
+    pdf: "",
     desc: "A compact basement with a red-leather cocktail-club feel and live piano. Up to 80 guests — intimate enough that 50 feels like a crowd rather than a gap. Well-suited to a launch that tips into party.",
     tag: "Cocktail club basement",
     photo: "https://images.unsplash.com/photo-1585518419759-7fe2e0fbf8a6?w=760&q=80"
@@ -460,6 +478,7 @@ const VENUES = [
     rating: 4.8, ratingCount: 850,
     address: "32 Great Queen St, WC2B 5AA",
     url: "https://lockes.co.uk",
+    pdf: "",
     desc: "A private basement with its own bar, lounge seating and PA system, for up to 60 standing. Less edgy than the Soho options, but warm, accessible and practical — a strong choice if the product should feel inviting rather than underground.",
     tag: "Private basement bar",
     photo: "https://images.unsplash.com/photo-1536935338788-846bb9981813?w=760&q=80"
@@ -473,6 +492,7 @@ const VENUES = [
     rating: 4.3, ratingCount: 397,
     address: "26 Denmark St, WC2H 8NJ",
     url: "https://www.outernet.com/b2b/spaces/the-lower-third",
+    pdf: "",
     desc: "Denmark Street — London's Tin Pan Alley — lends this basement real music heritage. The Forge and Cocktail Bar both cap around 40–50 guests. Keep for a tight 50; it punches above its weight on authentic music DNA.",
     tag: "Music venue / cocktail bar",
     photo: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=760&q=80"
@@ -488,6 +508,7 @@ const VENUES = [
   ratingCount: 461,
   address: "1 Mercer Walk, London WC2H 9FA, United Kingdom",
   url: "https://opengatelondon.guinness.com/en",
+  pdf: "",
   desc: "A multi-level Guinness brewery and visitor experience in Covent Garden, with on-site brewing, tours, tasting experiences, bars, restaurants, retail and private event spaces.",
   tag: "Brewery",
   photo: "https://images.ctfassets.net/3ur29599ohsr/qy8Qd5X5d2L98Ltdnghma/30554ba773b237f16ffa3944f6357c6c/50-50_Black_asset_right_-_image_-_Plan_your_visit.jpg"
@@ -535,7 +556,7 @@ setTimeout(rebindPins, 400);
 function rebindPins() {
   document.querySelectorAll('.pin-wrap').forEach(el => {
     el.addEventListener('click', () => {
-      const idx = parseInt(el.dataset.idx, 11);
+      const idx = parseInt(el.dataset.idx, 10);
       if (!isNaN(idx)) openDetail(idx);
     });
   });
@@ -543,7 +564,7 @@ function rebindPins() {
 
 function refreshPinStates() {
   document.querySelectorAll('.pin-wrap').forEach(el => {
-    const idx = parseInt(el.dataset.idx, 11);
+    const idx = parseInt(el.dataset.idx, 10);
     el.classList.toggle('active', idx === activeIdx);
   });
 }
@@ -565,6 +586,15 @@ function openDetail(idx) {
   document.getElementById('detail-cap').textContent = v.capacity;
   document.getElementById('detail-addr').textContent = v.address;
   document.getElementById('detail-link').href = v.url;
+
+  const pdfLink = document.getElementById('detail-pdf');
+  if (v.pdf && v.pdf.trim() !== '') {
+    pdfLink.href = v.pdf;
+    pdfLink.style.display = 'inline-flex';
+  } else {
+    pdfLink.href = '#';
+    pdfLink.style.display = 'none';
+  }
 
   const img = document.getElementById('detail-img');
   const ph  = document.getElementById('detail-placeholder');
